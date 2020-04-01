@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.generator.dao.WebBasicPatientInformationDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.generator.entity.WebBasicPatientInformationEntity" id="webQuestionnaireMap">
+        <result property="id" column="id"/>
+        <result property="subTime" column="sub_time"/>
+        <result property="subStatus" column="sub_status"/>
+        <result property="subContent" column="sub_content"/>
+        <result property="score" column="score"/>
+        <result property="userId" column="user_id"/>
+        <result property="hospitalId" column="hospital_id"/>
+        <result property="triggeringConditions" column="triggering_conditions"/>
+        <result property="generation" column="generation"/>
+    </resultMap>
+
+    <!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.generator.entity.WebBasicPatientInformationEntity" id="basicMap">
+        <result property="id" column="id"/>
+        <result property="subTime" column="sub_time"/>
+        <result property="subStatus" column="sub_status"/>
+        <result property="subContent" column="sub_content"/>
+        <result property="score" column="score"/>
+        <result property="userId" column="user_id"/>
+        <result property="hospitalId" column="hospital_id"/>
+        <result property="triggeringConditions" column="triggering_conditions"/>
+        <result property="generation" column="generation"/>
+        <result property="lessThan17" column="lessThan17"/>
+        <result property="mainAge" column="mainAge"/>
+        <result property="littleOld" column="littleOld"/>
+        <result property="middleOld" column="middleOld"/>
+        <result property="bigThan100" column="bigThan100"/>
+        <result property="travelOrReside" column="travelOrReside"/>
+        <result property="contactPatient" column="contactPatient"/>
+        <result property="closeContact" column="closeContact"/>
+        <result property="multipleOnset" column="multipleOnset"/>
+        <result property="crowded" column="crowded"/>
+        <result property="feverQuestion" column="feverQuestion"/>
+    </resultMap>
+
+    <!--年龄占比-->
+    <select id="queryGeneration" resultMap="basicMap"  parameterType="Map" >
+        select
+            sum(tmp.lessThan17) as lessThan17,
+            sum(tmp.mainAge) as mainAge,
+            sum(tmp.littleOld) as littleOld,
+            sum(tmp.middleOld) as middleOld,
+            sum(tmp.bigThan100) as bigThan100
+        from (
+            select
+            case when basic.generation = '小于等于17岁' then 1 else 0 end as lessThan17,
+            case when basic.generation = '18-65岁' then 1 else 0 end as mainAge,
+            case when basic.generation = '66-79岁' then 1 else 0 end as littleOld,
+            case when basic.generation = '80-99岁' then 1 else 0 end as middleOld,
+            case when basic.generation = '100岁以上' then 1 else 0 end as bigThan100
+            from web_basic_patient_information basic left join web_user wu on basic.user_id = wu.user_id
+            where 1 = 1
+            <if test="type !=null and type!='' and type == 1">
+                and wu.rating between 1 and 3
+            </if>
+            <include refid="hospital_where"></include>
+        ) tmp
+    </select>
+
+    <sql id="hospital_where">
+        <if test="area!=null and area!=''">
+            and exists (select id from web_hospital wh where wh.area = #{area}  and basic.hospital_id = wh.id)
+        </if>
+        <if test="district!=null and district!=''">
+            and exists (select id from web_hospital wh where wh.district = #{district}  and basic.hospital_id = wh.id)
+        </if>
+        <if test="hospitalName!=null and hospitalName!=''">
+            and exists (select id from web_hospital wh where wh.hospital_name = #{hospitalName}  and basic.hospital_id = wh.id)
+        </if>
+    </sql>
+
+
+    <!-- 流行病触发条件占比 -->
+    <select id="queryTriggeringConditions" resultMap="basicMap"  parameterType="Map" >
+        select
+            sum(tmp.travelOrReside) as travelOrReside,
+            sum(tmp.contactPatient) as contactPatient,
+            sum(tmp.closeContact) as closeContact,
+            sum(tmp.multipleOnset) as multipleOnset,
+            sum(tmp.crowded) as crowded,
+            sum(tmp.feverQuestion) as feverQuestion
+        from (
+            select
+            case when basic.triggering_conditions = '近期疫情严重地区旅行史或居住史' then 1 else 0 end as travelOrReside,
+            case when basic.triggering_conditions = '曾接触过疫情严重地区发热伴有呼吸道症状的患者' then 1 else 0 end as contactPatient,
+            case when basic.triggering_conditions = '曾与确诊患者近距离接触' then 1 else 0 end as closeContact,
+            case when basic.triggering_conditions= '居住地或工作场所中有多人发病' then 1 else 0 end as multipleOnset,
+            case when basic.triggering_conditions = '曾去过人群密集场所并且发热或者呼吸困难' then 1 else 0 end as crowded,
+            case when basic.triggering_conditions = '出现健康问题日期距离填表日期大于等于5天并且发热' then 1 else 0 end as feverQuestion
+            from web_basic_patient_information basic left join web_user wu on basic.user_id = wu.user_id
+            where wu.rating between 1 and 3
+            <include refid="hospital_where"></include>
+        ) tmp
+	</select>
+</mapper>

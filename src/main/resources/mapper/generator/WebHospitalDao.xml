@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.generator.dao.WebHospitalDao">
+
+
+    <select id="selectByDistrict" resultType="io.renren.modules.generator.entity.WebHospitalEntity"  parameterType="Map" >
+        select district from web_hospital
+        where 1 = 1
+        <if test="area!=null and area!=''">
+            and area like concat('%',#{area},'%')
+        </if>
+        group by district
+    </select>
+    <select id="selectByArea" resultType="io.renren.modules.generator.entity.WebHospitalEntity"  parameterType="Map" >
+        select area from web_hospital
+        group by area
+    </select>
+
+
+    <select id="mapData" resultType="Map"  parameterType="Map" >
+		SELECT
+		z.id,z.hospital_name hospitalName,z.location_infomation_longitude locationInfomationLongitude,z.location_infomation_dimension locationInfomationDimension,
+		ifnull(x.health,0) health,ifnull(x.suspected,0) suspected,ifnull(x.mild,0) mild,
+		ifnull(x.severe,0) severe,ifnull(x.severe,0)+ifnull(x.mild,0) illness
+		from
+		web_hospital z
+		left join (SELECT
+				a.hospital_id,b.sum as health,c.sum as suspected,d.sum as mild,e.sum as severe,f.hospital_name
+			FROM
+				(select hospital_id	from web_user GROUP BY hospital_id) a
+				LEFT JOIN (select COUNT(1) as sum,hospital_id	from web_user where rating = 0 GROUP BY hospital_id) b on a.hospital_id = b.hospital_id
+				LEFT JOIN (select COUNT(1) as sum,hospital_id	from web_user where rating = 1 GROUP BY hospital_id) c on a.hospital_id = c.hospital_id
+				LEFT JOIN (select COUNT(1) as sum,hospital_id	from web_user where rating = 2 GROUP BY hospital_id) d on a.hospital_id = d.hospital_id
+				LEFT JOIN (select COUNT(1) as sum,hospital_id	from web_user where rating = 3 GROUP BY hospital_id) e on a.hospital_id = e.hospital_id
+				LEFT JOIN web_hospital f on f.id = a.hospital_id
+		)x on x.hospital_id = z.id
+		where 1=1
+		<if test="area!=null and area!=''">
+                and z.area = #{area}
+        </if >
+    </select>
+
+</mapper>

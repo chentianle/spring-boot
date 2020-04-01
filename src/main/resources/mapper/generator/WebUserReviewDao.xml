@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.generator.dao.WebUserReviewDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.generator.entity.WebQuestionnaireEntity" id="webQuestionnaireMap">
+        <result property="id" column="id"/>
+        <result property="subTime" column="sub_time"/>
+        <result property="subStatus" column="sub_status"/>
+        <result property="subContent" column="sub_content"/>
+        <result property="score" column="score"/>
+        <result property="userId" column="user_id"/>
+        <result property="hospitalId" column="hospital_id"/>
+        <result property="handleStatus" column="handle_status"/>
+        <result property="diseaseDay" column="disease_day"/>
+        <result property="verbStatus" column="verb_status"/>
+        <result property="nounValue" column="noun_value"/>
+        <result property="diagnosisValue" column="diagnosis_value"/>
+    </resultMap>
+
+    <select id="queryPageBylist" resultType="io.renren.modules.generator.entity.WebUserReviewEntity"  parameterType="Map" >
+        select wu.username,wu.mobile ,wu.area_code as areaCode,wur.* from web_user_review wur ,web_user wu where
+            wur.user_id = wu.user_id
+            and wur.delete_flag = 0
+            <if test="username!=null and username!=''">
+                and wu.username like concat('%',#{username},'%')
+            </if >
+            <if test="mobile!=null and mobile!=''">
+                and wu.mobile like concat('%',#{mobile},'%')
+            </if >
+            <if test="subTime!=null and subTime!=''">
+                and sub_time like concat('%',#{subTime},'%')
+            </if >
+            <if test="lastCheckTimeCt!=null and lastCheckTimeCt!=''">
+                and last_check_time_ct like concat('%',#{lastCheckTimeCt},'%')
+            </if >
+            <if test="ignoreTime!=null and ignoreTime!=''">
+                and
+                (
+                ignore_time not like concat('%',#{ignoreTime},'%')
+                or
+                ignore_time is null
+                )
+            </if >
+        order by sub_time desc
+        limit #{pageStart},#{pageEnd}
+    </select>
+
+    <select id="queryPageByCount" resultType="java.lang.Integer"  parameterType="Map" >
+        select count(1) from web_user_review wur ,web_user wu where
+        wur.user_id = wu.user_id
+        and wur.delete_flag = 0
+        <if test="username!=null and username!=''">
+            and wu.username like concat('%',#{username},'%')
+        </if >
+        <if test="mobile!=null and mobile!=''">
+            and wu.mobile like concat('%',#{mobile},'%')
+        </if >
+        <if test="subTime!=null and subTime!=''">
+            and sub_time like concat('%',#{subTime},'%')
+        </if >
+        <if test="lastCheckTimeCt!=null and lastCheckTimeCt!=''">
+            and last_check_time_ct like concat('%',#{lastCheckTimeCt},'%')
+        </if >
+        <if test="ignoreTime!=null and ignoreTime!=''">
+            and
+            (
+            ignore_time not like concat('%',#{ignoreTime},'%')
+            or
+            ignore_time is null
+            )
+        </if >
+    </select>
+</mapper>

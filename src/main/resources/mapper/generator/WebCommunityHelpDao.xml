@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.generator.dao.WebCommunityHelpDao">
+
+    <select id="queryPageBylist" resultType="io.renren.modules.generator.entity.WebCommunityHelpEntity"  parameterType="Map" >
+        select wch.*,wu.username as userName,wu.mobile,wh.hospital_name as hospitalName
+        from web_community_help wch , web_user wu,web_hospital wh
+        where wch.webuser_id = wu.user_id
+        and wch.hospital_id = wh.id
+        <if test="area!=null and area!=''">
+            and exists (select id from web_hospital wh where wh.area = #{area}  and wch.hospital_id = wh.id)
+        </if>
+        <if test="district!=null and district!=''">
+            and exists (select id from web_hospital wh where wh.district = #{district}  and wch.hospital_id = wh.id)
+        </if>
+        <if test="hospitalName!=null and hospitalName!=''">
+            and exists (select id from web_hospital wh where wh.hospital_name = #{hospitalName}  and wch.hospital_id = wh.id)
+        </if>
+        <if test="type!=null and type!=''">
+            and wch.type = #{type}
+        </if>
+        <if test="feedbackStatus!=null and feedbackStatus!=''">
+            and wch.feedback_status = #{feedbackStatus}
+        </if>
+        <if test="username!=null and username!=''">
+            and wu.username like concat('%',#{username},'%')
+        </if>
+        <if test="mobile!=null and mobile!=''">
+            and wu.mobile like concat('%',#{mobile},'%')
+        </if>
+        order by wch.create_time desc
+        limit #{pageStart},#{pageEnd}
+	</select>
+
+    <select id="queryPageByCount" resultType="java.lang.Integer"  parameterType="Map" >
+        select count(1)
+        from web_community_help wch , web_user wu
+        where wch.webuser_id = wu.user_id
+        <if test="area!=null and area!=''">
+            and exists (select id from web_hospital wh where wh.area = #{area}  and wch.hospital_id = wh.id)
+        </if>
+        <if test="district!=null and district!=''">
+            and exists (select id from web_hospital wh where wh.district = #{district}  and wch.hospital_id = wh.id)
+        </if>
+        <if test="hospitalName!=null and hospitalName!=''">
+            and exists (select id from web_hospital wh where wh.hospital_name = #{hospitalName}  and wch.hospital_id = wh.id)
+        </if>
+        <if test="type!=null and type!=''">
+            and wch.type = #{type}
+        </if>
+        <if test="feedbackStatus!=null and feedbackStatus!=''">
+            and wch.feedback_status = #{feedbackStatus}
+        </if>
+        <if test="username!=null and username!=''">
+            and wu.username like concat('%',#{username},'%')
+        </if>
+        <if test="mobile!=null and mobile!=''">
+            and wu.mobile like concat('%',#{mobile},'%')
+        </if>
+	</select>
+
+    <!-- 管理端时时求助信息查询 -->
+    <select id="constantly" resultType="Map"  parameterType="Map" >
+    	select a.id,a.create_time createTime,a.demand_time demandTime,a.home_address as homeAddress,b.username,b.mobile,c.hospital_name hospitalName from  
+			web_community_help a
+			LEFT JOIN web_user b on a.webuser_id = b.user_id
+			LEFT JOIN web_hospital c on a.hospital_id = c.id
+            where 1=1
+             <include refid="hospital_where"></include>
+		ORDER BY a.create_time desc  limit  0,3 
+    </select>
+
+
+    <!-- 社区端时时求助信息查询 -->
+    <select id="communityConstantly" resultType="Map"  parameterType="Map" >
+    	select a.id,a.create_time createTime,a.demand_time demandTime,a.home_address as homeAddress,b.username,b.mobile,c.hospital_name hospitalName from  
+			web_community_help a
+			LEFT JOIN web_user b on a.webuser_id = b.user_id
+			LEFT JOIN web_hospital c on a.hospital_id = c.id
+		where a.type = 1
+        <include refid="hospital_where"></include>
+		ORDER BY a.create_time desc  limit  0,5 
+    </select>
+
+    <sql id="hospital_where">
+        <if test="area!=null and area!=''">
+            and exists (select id from web_hospital wh where wh.area = #{area}  and a.hospital_id = wh.id)
+        </if>
+        <if test="district!=null and district!=''">
+            and exists (select id from web_hospital wh where wh.district = #{district}  and a.hospital_id = wh.id)
+        </if>
+        <if test="hospitalName!=null and hospitalName!=''">
+            and exists (select id from web_hospital wh where wh.hospital_name = #{hospitalName}  and a.hospital_id = wh.id)
+        </if>
+    </sql>
+
+    <select id="queryById" resultType="io.renren.modules.generator.entity.WebCommunityHelpEntity"  parameterType="Map" >
+        select wch.*,wu.username as userName,wu.mobile,wh.hospital_name as hospitalName
+        from web_community_help wch , web_user wu,web_hospital wh
+        where wch.webuser_id = wu.user_id
+        and wch.hospital_id = wh.id
+        <if test="id!=null and id!=''">
+            and wch.id = #{id}
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.generator.dao.WebUserRatingDayDao">
+
+	<!-- 发展曲线 -->
+	<select id="progressCurve" resultType="Map"  parameterType="Map" >
+		   	
+    	SELECT
+			a.reportDate as date,<!-- ifnull(b.sum,0) as health, -->ifnull(c.sum,0) as suspected,ifnull(d.sum,0) as mild,ifnull(e.sum,0) as severe
+		FROM
+			(select cast(report_date as date) as reportDate from web_user_rating_day where 1=1
+				<include refid="hospital_where"></include>
+			    GROUP BY cast(report_date as date)) a
+			LEFT JOIN (select COUNT(1) as sum,cast(report_date as date) as reportDate from web_user_rating_day where rating = 0
+				<include refid="hospital_where"></include>
+				GROUP BY cast(report_date as date)) b on a.reportDate = b.reportDate
+			LEFT JOIN (select COUNT(1) as sum,cast(report_date as date)	as reportDate from web_user_rating_day where rating = 1
+				<include refid="hospital_where"></include>
+				GROUP BY cast(report_date as date)) c on a.reportDate = c.reportDate
+			LEFT JOIN (select COUNT(1) as sum,cast(report_date as date)	as reportDate from web_user_rating_day where rating = 2
+				<include refid="hospital_where"></include>
+				GROUP BY cast(report_date as date)) d on a.reportDate = d.reportDate
+			LEFT JOIN (select COUNT(1) as sum,cast(report_date as date)	as reportDate from web_user_rating_day where rating = 3
+				<include refid="hospital_where"></include>
+				GROUP BY cast(report_date as date)) e on a.reportDate = e.reportDate
+		ORDER BY a.reportDate
+    	
+    </select>
+	<sql id="hospital_where">
+		<if test="area!=null and area!=''">
+			and exists (select id from web_hospital wh where wh.area = #{area}  and hospital_id = wh.id)
+		</if>
+		<if test="district!=null and district!=''">
+			and exists (select id from web_hospital wh where wh.district = #{district}  and hospital_id = wh.id)
+		</if>
+		<if test="hospitalName!=null and hospitalName!=''">
+			and exists (select id from web_hospital wh where wh.hospital_name = #{hospitalName}  and hospital_id = wh.id)
+		</if>
+	</sql>
+    <!-- 临床症状总数占比数据 -->
+	<select id="symptom" resultType="Map"  parameterType="Map" >
+		SELECT
+			ifnull(sum(fever),0) fever,
+			ifnull(sum(mental_state),0) mentalState,
+			ifnull(sum(muscle_ache),0) muscleAche,
+			ifnull(sum(cough),0) cough,
+			ifnull(sum(difficulty_breathing),0) difficultyBreathing,
+			ifnull(sum(fatigue),0) fatigue,
+			ifnull(sum(diarrhea),0) diarrhea
+		FROM
+			web_user_rating_day
+			where 1=1
+			<include refid="hospital_where"></include>
+    </select>
+    
+        <!-- 临床症状总数占比数据 -->
+	<select id="collect" resultType="Integer"  parameterType="Map" >
+    select count(1) from web_user_rating_day 
+    where user_id in (select a.user_id from (
+		SELECT
+		user_id,count(1) as sum
+		FROM
+			web_user_rating_day
+		where rating = #{rating}
+		<include refid="hospital_where"></include>
+		GROUP BY user_id
+		)a where a.sum = 1)	
+	and report_date like concat('%',#{reportDate},'%')
+    </select>
+    
+
+
+</mapper>

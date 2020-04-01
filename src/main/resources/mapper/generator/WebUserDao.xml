@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.renren.modules.generator.dao.WebUserDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="io.renren.modules.generator.entity.WebUserEntity" id="webUserMap">
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="mobile" column="mobile"/>
+        <result property="password" column="password"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+
+	<select id="ranking" resultType="Map"  parameterType="Map" >
+		SELECT
+			ifnull(c.sum,0) as suspected,
+			ifnull(d.sum,0) as mild,
+			ifnull(e.sum,0) as severe,
+			ifnull(c.sum,0) + ifnull(d.sum,0) + ifnull(e.sum,0) as illness,
+			f.hospital_name as hospitalName
+		FROM
+			(select hospital_id	from web_user GROUP BY hospital_id) a
+			LEFT JOIN (select COUNT(1) as sum,hospital_id	from web_user where rating = 1 <include refid="hospital_where"></include> GROUP BY hospital_id) c on a.hospital_id = c.hospital_id
+			LEFT JOIN (select COUNT(1) as sum,hospital_id	from web_user where rating = 2 <include refid="hospital_where"></include> GROUP BY hospital_id) d on a.hospital_id = d.hospital_id
+			LEFT JOIN (select COUNT(1) as sum,hospital_id	from web_user where rating = 3 <include refid="hospital_where"></include> GROUP BY hospital_id) e on a.hospital_id = e.hospital_id
+			LEFT JOIN web_hospital f on f.id = a.hospital_id
+		ORDER BY illness desc
+		LIMIT 0,10
+    </select>
+
+	<sql id="hospital_where">
+		<if test="area!=null and area!=''">
+			and exists (select id from web_hospital wh where wh.area = #{area}  and hospital_id = wh.id)
+		</if>
+		<if test="district!=null and district!=''">
+			and exists (select id from web_hospital wh where wh.district = #{district}  and hospital_id = wh.id)
+		</if>
+		<if test="hospitalName!=null and hospitalName!=''">
+			and exists (select id from web_hospital wh where wh.hospital_name = #{hospitalName}  and hospital_id = wh.id)
+		</if>
+	</sql>
+
+	<select id="communityState" resultType="Integer"  parameterType="Map" >
+		select rating from web_user where  rating IS NOT NULL <include refid="hospital_where"></include> GROUP BY rating
+    </select>
+
+
+</mapper>
