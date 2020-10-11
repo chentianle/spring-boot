@@ -70,22 +70,15 @@ public class SysLoginController extends AbstractController {
 	 */
 	@PostMapping("/sys/login")
 	public Map<String, Object> login(@RequestBody SysLoginForm form, HttpServletRequest httpServletRequest)throws IOException {
-//		boolean captcha = sysCaptchaService.validate(form.getUuid(), form.getCaptcha());
-//		if(!captcha){
-//			return R.error("验证码不正确");
-//		}
-		if(form == null || StringUtils.isBlank(form.getTicket())|| StringUtils.isBlank(form.getRandstr())){
-			return R.error("参数不全");
-		}
-		int code = TCaptchaVerify.verifyTicket(form.getTicket(),form.getRandstr(),httpServletRequest.getRemoteAddr());
-		if (code == -1 || code >99) {
-			return R.error("用户危险等级过高禁止登录：" + code + "！");
+		boolean captcha = sysCaptchaService.validate(form.getUuid(), form.getCaptcha());
+		if(!captcha){
+			return R.error("验证码不正确");
 		}
 		//用户信息
 		SysUserEntity user = sysUserService.queryByUserName(form.getUsername());
-
+		String fromPassword = new Sha256Hash(form.getPassword(), user.getSalt()).toHex();
 		//账号不存在、密码错误
-		if(user == null || !user.getPassword().equals(new Sha256Hash(form.getPassword(), user.getSalt()).toHex())) {
+		if(user == null || !user.getPassword().equals(fromPassword)) {
 			return R.error("账号或密码不正确");
 		}
 
